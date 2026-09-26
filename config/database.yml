@@ -1,0 +1,36 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  primary:
+    <<: *default
+    database: <%= ENV.fetch("POSTGRES_DB") %>
+    host: <%= ENV.fetch("POSTGRES_HOST", "localhost") %>
+    port: <%= ENV.fetch("POSTGRES_PORT", 5432) %>
+    username: <%= ENV.fetch("POSTGRES_USER") %>
+    password: <%= ENV.fetch("POSTGRES_PASSWORD") %>
+  alloyal_source:
+    <<: *default
+    url: <%= ENV.fetch("ALLOYAL_SOURCE_DB_URL") %>
+    username: <%= ENV.fetch("ALLOYAL_SOURCE_DB_USER") %>
+    password: <%= ENV.fetch("ALLOYAL_SOURCE_DB_PASSWORD") %>
+    replica: true
+    database_tasks: false
+
+test:
+  primary:
+    <<: *default
+    database: <%= ENV.fetch("POSTGRES_DB") %>_test
+    host: <%= ENV.fetch("POSTGRES_HOST", "localhost") %>
+    port: <%= ENV.fetch("POSTGRES_PORT", 5432) %>
+    username: <%= ENV.fetch("POSTGRES_USER") %>
+    password: <%= ENV.fetch("POSTGRES_PASSWORD") %>
+  alloyal_source:
+    <<: *default
+    url: <%= ENV.fetch("ALLOYAL_SOURCE_DB_URL") %>
+    username: <%= ENV.fetch("ALLOYAL_SOURCE_DB_USER") %>
+    password: <%= ENV.fetch("ALLOYAL_SOURCE_DB_PASSWORD") %>
+    replica: true
+    database_tasks: false
