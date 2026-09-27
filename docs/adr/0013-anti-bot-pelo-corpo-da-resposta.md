@@ -23,5 +23,5 @@ ingestão interpretar `payload['objects']` de uma página HTML como se fosse a l
 - Um bloqueio anti-bot não é confundido com "página vazia de pedidos".
 - A detecção depende de strings literais da página atual de captcha da Magalu; se a página
   mudar, a detecção para de funcionar silenciosamente (o teste em
-  `test/services/ingestion/magalu/orders_test.rb` fixa essas strings, então uma mudança aparece como
+  `spec/services/ingestion/magalu/orders_spec.rb` fixa essas strings, então uma mudança aparece como
   teste quebrado, não como bug em produção sem aviso).

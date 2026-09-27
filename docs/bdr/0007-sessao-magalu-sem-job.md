@@ -18,7 +18,7 @@ clicar.
 - **Sem job agendado.** A sessão só é renovada quando se prova necessária (não existe, venceu,
   ou a API respondeu 401). O objetivo é **não irritar o anti-bot**: o único contato com o login
   é o estritamente necessário.
-- A sessão fica numa **linha do Postgres**, no schema `cashback`, porque o processo
+- A sessão fica numa **linha do Postgres** do Cashback, porque o processo
   só existe por causa da coleta de pedidos da Magalu (`magalu_raw_orders`).
 - São **indispensáveis**, pela experiência da operação com o legado: navegador disfarçado,
   perfil de navegador persistente e aquecer a home antes do login.

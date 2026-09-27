@@ -15,7 +15,7 @@ _Avoid_: Alloyal (a empresa tem vários microserviços; seja específico).
 Uma compra feita através do App Alloyal, identificada por `number` (no contrato do Lojista
 Alloyal, `order_number`). Imutável: uma vez gravado, nunca é atualizado — só a chegada de um
 pedido novo com o mesmo `number` é ignorada. O `organization_name` diz a afiliadora e nunca é
-nulo nem muda.
+nulo nem muda. Sem `user_name`, que junto com o `number` é chave do match, o pedido é recusado.
 _Avoid_: Pedido Alloyal, order, transação, venda.
 
 **Afiliadora**:
@@ -41,8 +41,7 @@ precisa dele diretamente (cruzamento, filtro, índice).
 _Avoid_: Campo extraído, campo mapeado.
 
 **Invariante**:
-Uma regra que todo pedido deveria respeitar (ex.: todo Pedido do App Alloyal tem `user_name`). Quando
-violada, é registrada como erro (`Rails.logger.error`) — nunca bloqueia a gravação nem descarta o
+Uma regra que todo pedido deveria respeitar. Quando violada, é registrada como erro (`Rails.logger.error`) — nunca bloqueia a gravação nem descarta o
 pedido.
 _Avoid_: Validação, constraint (isso é o contrato da fonte; invariante é a regra de negócio por
 cima dele).
@@ -122,8 +121,8 @@ nossa, `curated` a do consumidor (os nomes do contrato do Lojista Alloyal).
 _Avoid_: bronze, silver, gold no código e nos nomes de tabela.
 
 **Setor**:
-Uma das quatro áreas da operação que o backbone atende (Cashback, Suporte, Infraestrutura,
-Deployment). O Cashback é o primeiro a ser construído; os demais vêm depois.
+Uma das quatro áreas da operação (Cashback, Suporte, Infraestrutura, Deployment). Cada setor
+tem o seu repositório; este é o do Cashback, o primeiro a ser construído.
 _Avoid_: Squad, time, domínio (setor é organizacional, não um Bounded Context de código).
 
 **Legado**:

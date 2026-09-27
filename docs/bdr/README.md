@@ -7,10 +7,10 @@ operação, e não do código nem do legado. As decisões **técnicas** que elas
 | BDR | Título | Status |
 |---|---|---|
 | [0001](0001-nome-alloyal-backbone.md) | O sistema se chama Alloyal Backbone | Aceito |
-| [0002](0002-escopo-inicial-cashback.md) | Ponto de convergência de quatro setores; começar pelo Cashback | Aceito |
+| [0002](0002-escopo-inicial-cashback.md) | Um repositório por setor; este é o do Cashback | Aceito |
 | [0003](0003-legado-e-referencia-nao-verdade.md) | O legado é referência a questionar, não fonte de verdade | Aceito |
 | [0004](0004-pedido-alloyal-e-imutavel.md) | O Pedido do lado da Alloyal é identificado por `number` e é imutável | Aceito |
-| [0005](0005-todo-pedido-alloyal-tem-nome.md) | Todo Pedido Alloyal tem nome; a ausência é erro | Aceito |
+| [0005](0005-pedido-alloyal-sem-nome-e-recusado.md) | Pedido Alloyal sem nome é recusado | Aceito |
 | [0006](0006-ingerir-todos-os-pedidos-magalu.md) | A ingestão traz todos os pedidos Magalu da Alloyal | Aceito |
 | [0007](0007-sessao-magalu-sem-job.md) | Sessão Magalu: login humano, sob demanda, sem job, para não irritar o anti-bot | Aceito |
 | [0008](0008-reingerir-90-dias-por-faturamento-tardio.md) | Reingestão dos últimos 90 dias, por causa do faturamento tardio | Aceito |

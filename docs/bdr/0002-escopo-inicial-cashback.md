@@ -1,16 +1,17 @@
-# BDR-0002 — Ponto de convergência de quatro setores; começar pelo Cashback
+# BDR-0002 — Um repositório por setor; este é o do Cashback
 
 - **Status:** Aceito
 - **Data:** 2026-09-23
 
 ## Contexto
 
-O Backbone é o ponto de convergência de quatro setores: **Cashback**, **Suporte**,
-**Infraestrutura** e **Deployment**. Por isso existe mais de um subdomínio núcleo.
+A operação tem quatro setores: **Cashback**, **Suporte**, **Infraestrutura** e **Deployment**.
+Cada setor tem o seu repositório e o seu banco
+([ADR-0001](../adr/0001-monorepo-monolito-modular-por-pacote.md)).
 
 ## Decisão
 
-- Começar pelo processo que existe hoje: **Cashback**.
+- Este repositório é o do **Cashback**, o processo que existe hoje.
 - **Suporte:** depois.
 - **Infraestrutura:** ainda amadurecendo.
 - **Deployment:** fora do escopo por enquanto.

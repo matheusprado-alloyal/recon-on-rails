@@ -7,7 +7,7 @@
 > **hipótese** ou listado em [Questões em aberto](#9-questões-em-aberto). A [seção 8](#8-o-que-mudou-em-relação-ao-design-doc-legado-bastidor)
 > é o lugar onde uma afirmação do legado é confirmada ou descartada, à medida que aparece.
 
-- **Última atualização:** 2026-09-25
+- **Última atualização:** 2026-09-26
 - **Decisões técnicas:** [`adr/`](adr/README.md) · **Decisões de negócio:** [`bdr/`](bdr/README.md)
   · **Glossário:** [`CONTEXT.md`](../CONTEXT.md)
 
@@ -16,8 +16,8 @@
 ## 1. O que é
 
 O Alloyal Backbone é a base de dados e processos que reúne os pedidos do **App Alloyal** e os
-pedidos das afiliadoras (a primeira é a **Magalu**) para a conciliação de cashback. É o ponto de
-convergência de quatro setores: Cashback, Suporte, Infraestrutura e Deployment
+pedidos das afiliadoras (a primeira é a **Magalu**) para a conciliação de cashback. Cada setor
+da operação tem o seu repositório; este é o do Cashback
 ([BDR-0002](bdr/0002-escopo-inicial-cashback.md)).
 
 O nome anterior, "Bastidor", foi abandonado ([BDR-0001](bdr/0001-nome-alloyal-backbone.md)).
@@ -40,7 +40,7 @@ Três eixos independentes ([ADR-0001](adr/0001-monorepo-monolito-modular-por-pac
 
 | Eixo | Decisão |
 |---|---|
-| Repositório | Monorepo: a aplicação Rails e o front em TypeScript |
+| Repositório | Um por setor; este é o do Cashback: a aplicação Rails e o front em TypeScript |
 | Código | Monólito modular por contexto (namespaces `Ingestion` e `Reconciliation`) |
 | Execução | Múltiplas unidades de implantação: jobs (`rake`), servidor HTTP, front |
 
@@ -62,12 +62,12 @@ recon-on-rails/
 │       │   └── magalu/         # sessão (Ferrum) e pedidos (watermark, paginação, anti-bot)
 │       └── reconciliation/
 │           └── magalu/         # candidates, links, remittance, anomalies
-├── config/database.yml          # backbone + fonte Alloyal (somente leitura)
+├── config/database.yml          # banco do Cashback (a origem do App Alloyal fica fora, via pg)
 ├── db/
 │   ├── migrate/
 │   └── structure.sql
 ├── lib/tasks/                  # jobs: ingestion:alloyal, ingestion:magalu_session, ingestion:magalu_orders
-├── test/                       # espelha app/
+├── spec/                       # espelha app/
 ├── docs/                       # este documento, adr/, bdr/, agents/
 ├── CONTEXT.md                  # glossário do domínio
 └── docker-compose.yaml         # Postgres 17 de desenvolvimento
@@ -82,12 +82,12 @@ recon-on-rails/
 
 | Fonte | Acesso | Situação |
 |---|---|---|
-| Banco do App Alloyal (tabela `orders`) | Somente leitura, `ALLOYAL_SOURCE_DB_URL` | A ingerir |
+| Banco do App Alloyal (tabela `orders`) | Somente leitura, `ALLOYAL_SOURCE_DB_URL`, gem `pg` direto | A ingerir |
 | API de pedidos da Magalu (`/v1/showcase/orders`, `magazinevoce.com.br`) | Cookie `sessionid` da conta de afiliado | A ingerir, incremental por marca d'água |
 
 ## 5. Modelo de dados
 
-Schema `cashback` ([ADR-0014](adr/0014-schema-por-setor-e-camadas-medallion.md)).
+Schema `public`: o banco é só do Cashback ([ADR-0014](adr/0014-camadas-medallion-no-nome-da-tabela.md)).
 
 **`alloyal_raw_orders`** — o Pedido do App Alloyal, imutável
 ([ADR-0003](adr/0003-ingestao-bruta-imutavel.md), [BDR-0004](bdr/0004-pedido-alloyal-e-imutavel.md))
@@ -97,11 +97,11 @@ Schema `cashback` ([ADR-0014](adr/0014-schema-por-setor-e-camadas-medallion.md))
 | `id` | `BIGINT` PK | id da Alloyal, nunca gerado pelo banco |
 | `number` | `VARCHAR(100)` | `NOT NULL`, `UNIQUE`: identificador do pedido |
 | `organization_name` | `VARCHAR(255)` | `NOT NULL`: a afiliadora ([ADR-0019](adr/0019-campos-exigidos-pela-conciliacao-not-null.md)) |
-| `user_name`, `business_name` | `VARCHAR(255)` | promovidos da fonte |
-| `discount_type`, `cashback_type`, `status` | `VARCHAR(50)` | promovidos da fonte |
+| `user_name` | `VARCHAR(255)` | `NOT NULL`: chave do match, junto com o `number` ([BDR-0005](bdr/0005-pedido-alloyal-sem-nome-e-recusado.md)) |
+| `business_name` | `VARCHAR(255)` | promovido da fonte |
+| `discount_type`, `cashback_type` | `VARCHAR(50)` | promovidos da fonte |
 | `discount_value`, `cashback_value` | `NUMERIC(10,2)` | promovidos da fonte |
 | `created_at` | `TIMESTAMPTZ` | assumido UTC ([ADR-0004](adr/0004-contrato-da-fonte-na-fronteira.md)) |
-| `external_id` | `VARCHAR(255)` | promovido da fonte |
 | `raw_payload` | `JSONB` | a linha original inteira |
 | `ingested_at` | `TIMESTAMPTZ` | `now()` na gravação |
 
@@ -139,19 +139,19 @@ Schema `cashback` ([ADR-0014](adr/0014-schema-por-setor-e-camadas-medallion.md))
 | `expires_at` | `TIMESTAMPTZ` | o `Expires` do cookie |
 | `captured_at` | `TIMESTAMPTZ` | o momento do login |
 
-As tabelas da conciliação estão no [ADR-0014](adr/0014-schema-por-setor-e-camadas-medallion.md).
+As tabelas da conciliação estão no [ADR-0014](adr/0014-camadas-medallion-no-nome-da-tabela.md).
 
 ## 6. Fluxos da ingestão (desenhados)
 
 ### 6.1 Ingestão do App Alloyal
 
 ```
-banco do App Alloyal (orders, Magalu) → AlloyalOrderContract → invariante (log) → alloyal_raw_orders
+banco do App Alloyal (orders, Magalu, via pg) → AlloyalOrderContract → recusados (log) → alloyal_raw_orders
 ```
 
-1. Lê todos os pedidos com `organization_name = 'Magalu'` ([BDR-0006](bdr/0006-ingerir-todos-os-pedidos-magalu.md)).
+1. Lê todos os pedidos com `organization_name = 'Magalu'`, com a gem `pg`, direto; todo valor chega como texto ([BDR-0006](bdr/0006-ingerir-todos-os-pedidos-magalu.md)).
 2. Valida cada linha pelo contrato; `created_at` sem fuso recebe UTC.
-3. Pedido sem `user_name` é gravado e gera `Rails.logger.error` ([ADR-0005](adr/0005-invariante-violada-e-registrada.md)).
+3. Contrato inválido (sem `user_name`, sem `organization_name` ou com payload só de campos promovidos) é registrado no log e fica de fora; o fluxo segue ([ADR-0005](adr/0005-pedido-recusado-e-registrado.md)).
 4. Grava com `insert_all(..., unique_by: :number)` (`ON CONFLICT (number) DO NOTHING`).
 
 Execução: `bin/rails ingestion:alloyal`.
@@ -211,14 +211,14 @@ alloyal_raw_orders ┘      refined                 refined              curated
 
 - **Regras:** [BDR-0009](bdr/0009-conciliacao-por-afiliadora-app-alloyal-pivo.md) a
   [BDR-0014](bdr/0014-billed-que-volta-para-true-e-anomalia.md).
-- **Técnica:** [ADR-0014](adr/0014-schema-por-setor-e-camadas-medallion.md) a
+- **Técnica:** [ADR-0014](adr/0014-camadas-medallion-no-nome-da-tabela.md) a
   [ADR-0019](adr/0019-campos-exigidos-pela-conciliacao-not-null.md).
 
 ### 7.2 Roadmap
 
 | Marco | Entregável |
 |---|---|
-| M0 — Ingestão | Aplicação Rails, schema `cashback`, tabelas raw e de controle, as três ingestões com testes |
+| M0 — Ingestão | Aplicação Rails, tabelas raw e de controle, as três ingestões com testes |
 | M1 — Boilerplate da conciliação | Tabelas refined, curated e de controle migradas, com a view, e testes rodando |
 | M2 — Candidatos | Job gera candidatos reais, com nota do nome e modelo semântico |
 | M3 — Vínculo | Confirmar, criar manual e devolver, com os locks provados por teste |
@@ -235,7 +235,7 @@ Depois: implantação em Docker (Chrome num estágio do Dockerfile, perfil em vo
 |---|---|
 | Nome "Bastidor" | Alloyal Backbone |
 | Pastas `shared/`, `cashback/`, `suporte/` | Uma aplicação Rails com namespaces por contexto (`Ingestion`, `Reconciliation`) |
-| Schemas `raw_afiliadas`, `cashback`, `suporte` | Um schema por setor; o primeiro é o `cashback` ([ADR-0014](adr/0014-schema-por-setor-e-camadas-medallion.md)) |
+| Schemas `raw_afiliadas`, `cashback`, `suporte` | Um repositório e um banco por setor; as tabelas ficam no `public` ([ADR-0001](adr/0001-monorepo-monolito-modular-por-pacote.md), [ADR-0014](adr/0014-camadas-medallion-no-nome-da-tabela.md)) |
 | Fase 0 (Pareto de 30K tickets, sessão gravada com o analista) | **Não revalidada.** Fica fora deste documento até ser confirmada pela operação |
 | Fase 1 (match em dois estágios, modo sombra, aprovação via CLI) | **Parcialmente confirmada pela operação:** nota do nome + modelo semântico, janela de 12 h/72 h ([BDR-0010](bdr/0010-candidatos-magalu-janela-nome-modelo.md)). A aprovação é pelo front, não pela CLI ([BDR-0012](bdr/0012-todo-vinculo-e-informado-ao-lojista.md)). Modo sombra não revalidado |
 | `ml_order_id` normalizado removendo não-dígitos antes de cruzar | **Não revalidado.** O `ml_order_id` é gravado como veio, sem normalização — só entra se a conciliação provar que precisa |
@@ -249,9 +249,10 @@ Depois: implantação em Docker (Chrome num estágio do Dockerfile, perfil em vo
 | A receita de login ([ADR-0008](adr/0008-navegador-ferrum-chrome-perfil-persistente.md)) passa pelo anti-bot com o Ferrum? | `Ingestion::Magalu::Session` |
 | Qual biblioteca calcula a nota de similaridade do nome, e o limite de 90 vale nela? Calibrar com pares reais | [BDR-0010](bdr/0010-candidatos-magalu-janela-nome-modelo.md) |
 | Qual modelo semântico escolhe entre os 3 candidatos abaixo de 90, e onde ele roda? | [BDR-0010](bdr/0010-candidatos-magalu-janela-nome-modelo.md) |
-| O `created_at` do App Alloyal é mesmo UTC? | [ADR-0004](adr/0004-contrato-da-fonte-na-fronteira.md) |
+| O `created_at` do App Alloyal é mesmo UTC? (a coluna é `timestamp without time zone`: o fuso não vem junto) | [ADR-0004](adr/0004-contrato-da-fonte-na-fronteira.md) |
 | O `created_at` da Magalu vem em BRT sem fuso, como o legado afirma? | [ADR-0004](adr/0004-contrato-da-fonte-na-fronteira.md) |
 | O `ml_order_id` da Magalu tem formato estável? (o legado removia não-dígitos antes de cruzar) | Chave de `magalu_raw_orders`, conciliação |
 | Perfil ainda logado faz o site pular a tela de login? | `Ingestion::Magalu::Session` |
 | Como o front em TypeScript entra no chatbot do suporte | [ADR-0018](adr/0018-reconciliation-em-camadas-por-afiliadora.md) |
 | Status `available` e `approved`, e o envio por API ao Lojista Alloyal | [BDR-0012](bdr/0012-todo-vinculo-e-informado-ao-lojista.md) |
+| O usuário do `ALLOYAL_SOURCE_DB_URL` só tem permissão de leitura? O código não impõe isso | [ADR-0002](adr/0002-banco-unico-tabelas-com-dono.md) |

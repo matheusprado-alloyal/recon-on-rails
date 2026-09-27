@@ -21,4 +21,4 @@ Essas mudanças são feitas por pessoas, e o controle delas já existe por outro
 ## Consequências
 
 - Técnica: [ADR-0003](../adr/0003-ingestao-bruta-imutavel.md).
-- O `status` guardado é o do momento da ingestão e não deve ser usado como regra.
+- O `status` da origem não é guardado como campo próprio; ele fica só no `raw_payload`.

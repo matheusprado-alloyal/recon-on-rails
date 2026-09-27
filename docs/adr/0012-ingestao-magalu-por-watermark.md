@@ -12,7 +12,7 @@ histórico.
 
 ## Decisão
 
-- `cashback.magalu_orders_watermark` — tabela singleton (`CHECK id = 1`, como
+- `magalu_orders_watermark` — tabela singleton (`CHECK id = 1`, como
   [ADR-0006](0006-sessao-magalu-singleton-sob-demanda.md)) guarda `last_success_at`: o início do
   último job que terminou com sucesso.
 - `ingest_orders` pagina do mais novo para o mais antigo e para quando encontra um pedido

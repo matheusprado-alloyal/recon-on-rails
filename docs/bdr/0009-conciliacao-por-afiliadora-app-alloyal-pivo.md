@@ -29,6 +29,6 @@ o import curado.
 
 ## Consequências
 
-- Técnica: [ADR-0014](../adr/0014-schema-por-setor-e-camadas-medallion.md) e
+- Técnica: [ADR-0014](../adr/0014-camadas-medallion-no-nome-da-tabela.md) e
   [ADR-0018](../adr/0018-reconciliation-em-camadas-por-afiliadora.md).
 - Uma nova afiliadora ganha as suas regras e as suas tabelas; nada é compartilhado antes disso.

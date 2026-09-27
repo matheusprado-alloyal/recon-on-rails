@@ -13,9 +13,9 @@ o Backbone.
 
 ## Decisão
 
-- A tabela `cashback.alloyal_raw_orders` guarda o pedido **como veio**:
+- A tabela `alloyal_raw_orders` guarda o pedido **como veio**:
   - alguns campos são "promovidos" para colunas tipadas (`number`, `organization_name`,
-    `user_name`, `cashback_value`, `status`, `created_at`...);
+    `user_name`, `cashback_value`, `created_at`...);
   - a linha original inteira fica em `raw_payload` (JSONB).
 - **Imutável:** a gravação usa `insert_all(..., unique_by: :number)`, que o ActiveRecord
   traduz para `INSERT ... ON CONFLICT (number) DO NOTHING`. Um pedido já gravado nunca é
@@ -29,7 +29,12 @@ o Backbone.
 
 ## Consequências
 
-- O `status` gravado é uma foto do momento da ingestão. Nenhuma regra deve depender dele.
-- O `raw_payload` é gravado como JSONB; datas e decimais viram texto na serialização.
-- A tabela é criada com `id: false` e a coluna `id` declarada como `bigint` chave primária, sem
+- O `status` da origem não é promovido: numa tabela imutável ele envelheceria sem nunca ser
+  corrigido. Ele continua disponível no `raw_payload`.
+- O `raw_payload` guarda a linha inteira, inclusive dados pessoais (`user_cpf`): o dado é da
+  própria Alloyal e só muda de aplicação dentro da empresa.
+- O `raw_payload` é gravado como JSONB, com os valores como a gem `pg` os entrega: todos como
+  texto.
+- O `external_id` da origem também não é promovido; ele fica no `raw_payload`.
+- A tabela é criada com `id: :bigint, default: nil`: a chave primária é `bigint`, sem
   sequence. Um teste garante que o `id` gravado é o da Alloyal.

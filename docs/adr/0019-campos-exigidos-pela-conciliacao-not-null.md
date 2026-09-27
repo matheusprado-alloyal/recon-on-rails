@@ -18,7 +18,7 @@ A operação confirma que o `organization_name` nunca é nulo e nunca muda.
 
 - O `total` é obrigatório no `Ingestion::MagaluOrderContract`, e `magalu_raw_orders.total` é
   `NOT NULL` (`null: false`). Um pedido sem `total` é recusado pelo contrato: ele é logado e o fluxo segue
-  ([ADR-0005](0005-invariante-violada-e-registrada.md)).
+  ([ADR-0005](0005-pedido-recusado-e-registrado.md)).
 - O `organization_name` é obrigatório no `Ingestion::AlloyalOrderContract`, e
   `alloyal_raw_orders.organization_name` é `NOT NULL` (`null: false`).
 - As duas colunas já nascem `NOT NULL` na migration que cria as tabelas.

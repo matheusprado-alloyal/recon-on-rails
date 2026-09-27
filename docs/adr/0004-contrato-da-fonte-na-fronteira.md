@@ -24,11 +24,18 @@ O legado misturava as duas, por exemplo convertendo UTC para BRT (−3h fixo) j�
   fuso, sem somar nem subtrair horas. Um valor que já venha com fuso é mantido.
 - **`created_at` da Magalu:** chega sem fuso e é **assumido como BRT** (`America/Sao_Paulo`).
 - A conversão para outro fuso acontece na **leitura**, onde a operação precisa dela.
-- **Dinheiro é `BigDecimal`**, nunca `Float`. Um valor inválido é recusado pelo contrato; ele
-  nunca vira `0` sem aviso.
+- **Dinheiro é `BigDecimal`**, nunca `Float`. Na origem do App Alloyal as colunas de dinheiro
+  são `numeric(10,2)`: o próprio Postgres garante que só chega número, então o contrato não
+  trata valor inválido.
+- **O `raw_payload` precisa trazer mais que os campos promovidos.** Um pedido real traz
+  dezenas de campos; um payload só com os promovidos é sinal de dado forjado e é recusado.
+- Os campos promovidos são os `attribute` do contrato. O `from_row` recorta esses campos da
+  linha da origem e guarda a linha inteira no `raw_payload`.
 
 ## Consequências
 
 - As premissas de fuso **ainda não foram confirmadas na origem**. O comentário do contrato
   registra isso, e um teste falha se a regra sumir.
+- Confirmado na origem: `orders.created_at` é `timestamp without time zone`. Isso prova que o
+  fuso não vem junto, não que o horário é UTC.
 - Cada fonte tem o seu próprio contrato de fuso.

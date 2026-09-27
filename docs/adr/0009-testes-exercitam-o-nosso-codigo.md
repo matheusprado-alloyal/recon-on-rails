@@ -10,18 +10,20 @@ a ingestão funciona.
 
 ## Decisão
 
-- Framework: **Minitest**, o padrão do Rails (`bin/rails test`).
+- Framework: **RSpec** (`rspec-rails`, `bundle exec rspec`), com os testes em `spec/`
+  espelhando `app/`. Escolhido no lugar do Minitest padrão do Rails pelos mocks embutidos
+  (`allow`/`expect`) e pela saída legível como lista de regras (`--format documentation`).
 - Um teste chama o **método de produção** (ex.: `save_raw_orders`), e não uma cópia do SQL.
 - Um bom teste **falha quando a regra some**.
 - Os testes rodam contra um **Postgres de verdade**: o banco de teste do Rails, separado do banco
   de desenvolvimento. Cada teste roda dentro de uma transação que o Rails desfaz no final
-  (`use_transactional_tests`), então nenhum dado de teste sobra.
+  (`use_transactional_fixtures`, no `spec/rails_helper.rb`), então nenhum dado de teste sobra.
 - Como o banco de teste é separado, a sessão Magalu real, guardada no banco de desenvolvimento,
   nunca é tocada pelos testes.
 - Cada teste carrega só os campos necessários para provar **uma** regra, com valores tirados
   de dado real.
 - O nome do teste é a regra que ele protege, em português (ex.:
-  `test "pedido sem user_name é gravado mesmo assim"`).
+  `it "pedido sem user_name é recusado"`).
 
 ## Consequências
 

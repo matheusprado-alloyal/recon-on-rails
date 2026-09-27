@@ -15,11 +15,11 @@ três.
 
 - **Fonte Alloyal:** nenhum seam. O teste conecta de verdade e roda uma query trivial
   (`SELECT version();`) — só prova que o banco está de pé, não exercita regra de negócio.
-- **Login Magalu (navegador):** o teste substitui, com `stub` do Minitest, o método que abre o
+- **Login Magalu (navegador):** o teste substitui, com `allow(...).to receive` do RSpec, o método que abre o
   navegador e captura a sessão (`login_and_capture` / `login_with_retry` em
   `Ingestion::Magalu::Session`). Esse método é a fronteira entre a decisão de renovar e o ato de
   abrir um navegador.
-- **API de pedidos Magalu (HTTP):** `stub` em `fetch_page` (`Ingestion::Magalu::Orders`), pelo
+- **API de pedidos Magalu (HTTP):** `allow` em `fetch_page` (`Ingestion::Magalu::Orders`), pelo
   mesmo motivo.
 
 Nenhuma assinatura de método de produção muda para viabilizar isso.

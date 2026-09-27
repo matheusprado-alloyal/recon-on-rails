@@ -22,7 +22,7 @@ backoff, watchdog, alertas).
 - **Singleton = uma linha no Postgres**, e não um objeto em memória. Um singleton em Ruby
   vive dentro de um processo só; com vários processos, cada um teria o seu e cada um faria
   login.
-- Tabela `cashback.magalu_session`:
+- Tabela `magalu_session`:
 
 | Coluna | Regra |
 |---|---|

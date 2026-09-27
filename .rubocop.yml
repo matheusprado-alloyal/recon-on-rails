@@ -1,8 +1,81 @@
-# Omakase Ruby styling for Rails
-inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+# Estilo oficial do Rails: aspas duplas e espaçamento. Ele desliga quase todos os
+# departamentos e religa só algumas regras de formatação.
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
 
-# Overwrite or add rules to create your own house style
-#
-# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
-# Layout/SpaceInsideArrayLiteralBrackets:
-#   Enabled: false
+plugins:
+  - rubocop-performance
+  - rubocop-rails
+  - rubocop-rspec
+
+inherit_mode:
+  merge:
+    - Exclude
+
+AllCops:
+  NewCops: enable
+
+# Religados: pegam erro de verdade, não questão de gosto.
+Lint:
+  Enabled: true
+
+Security:
+  Enabled: true
+
+Rails:
+  Enabled: true
+
+Performance:
+  Enabled: true
+  Exclude:
+    - "spec/**/*"
+
+# CLAUDE.md: linha de até 100 caracteres.
+Layout/LineLength:
+  Enabled: true
+  Max: 100
+  Exclude:
+    - "config/environments/**/*"
+    - "config/initializers/**/*"
+    - "db/seeds.rb"
+    - "Gemfile"
+
+# CLAUDE.md: complexidade ciclomática de até 10 por método.
+Metrics/CyclomaticComplexity:
+  Enabled: true
+  Max: 10
+
+# O omakase só cobre test/ (Minitest); aqui os testes ficam em spec/.
+Style/StringLiterals:
+  Include:
+    - "app/**/*"
+    - "config/**/*"
+    - "lib/**/*"
+    - "spec/**/*"
+    - "Gemfile"
+    - "db/seeds.rb"
+
+# ADR-0003: a gravação usa insert_all de propósito; a validação mora no contrato (ADR-0004).
+Rails/SkipsModelValidations:
+  AllowedMethods:
+    - insert_all
+
+# A aplicação só fala português e não tem arquivos de tradução.
+Rails/I18nLocaleTexts:
+  Enabled: false
+
+# Um teste prova uma regra, mas pode conferir mais de uma coisa sobre ela (ADR-0009).
+RSpec/MultipleExpectations:
+  Max: 3
+
+# Hash, array e chamada quebrada em várias linhas contam como uma linha só.
+RSpec/ExampleLength:
+  CountAsOne:
+    - array
+    - hash
+    - heredoc
+    - method_call
+
+# A expectativa vem antes da ação: expect(...).to receive(...).
+RSpec/MessageSpies:
+  EnforcedStyle: receive
