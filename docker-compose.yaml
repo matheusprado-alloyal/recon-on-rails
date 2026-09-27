@@ -11,7 +11,25 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  chrome:
+    build: docker/chrome
+    container_name: recon_chrome
+    restart: unless-stopped
+    environment:
+      SE_NODE_MAX_SESSIONS: 1
+    ports:
+      - "127.0.0.1:4444:4444"
+      - "127.0.0.1:7900:7900"
+    volumes:
+      - browser_profile:/home/seluser/browser-profile
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2g
 
 volumes:
   postgres_data:
+    driver: local
+  browser_profile:
     driver: local
