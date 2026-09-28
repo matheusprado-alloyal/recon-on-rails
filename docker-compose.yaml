@@ -14,6 +14,9 @@ services:
   chrome:
     build: docker/chrome
     container_name: recon_chrome
+    # ADR-0008: a trava do perfil (SingletonLock) é <hostname>-<pid>; com o hostname fixo, o
+    # Chrome reassume o perfil sozinho depois de um crash.
+    hostname: recon_chrome
     restart: unless-stopped
     environment:
       SE_NODE_MAX_SESSIONS: 1

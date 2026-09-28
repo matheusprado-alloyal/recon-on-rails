@@ -56,9 +56,11 @@ Style/StringLiterals:
     - "db/seeds.rb"
 
 # ADR-0003: a gravação usa insert_all de propósito; a validação mora no contrato (ADR-0004).
+# ADR-0006: a sessão Magalu é gravada por cima com upsert (ON CONFLICT (id) DO UPDATE).
 Rails/SkipsModelValidations:
   AllowedMethods:
     - insert_all
+    - upsert
 
 # A aplicação só fala português e não tem arquivos de tradução.
 Rails/I18nLocaleTexts:
