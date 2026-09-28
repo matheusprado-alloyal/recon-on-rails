@@ -18,7 +18,9 @@ três.
 - **Login Magalu (navegador):** o teste substitui, com `allow(...).to receive` do RSpec, o método que abre o
   navegador e captura a sessão (`login_and_capture` / `login_with_retry` em
   `Ingestion::Magalu::Session`). Esse método é a fronteira entre a decisão de renovar e o ato de
-  abrir um navegador.
+  abrir um navegador. Só a regra "o navegador é encerrado mesmo quando o login falha" substitui
+  a chamada que sai da nossa infraestrutura, `Selenium::WebDriver.for`, devolvendo um
+  `instance_double` do driver.
 - **API de pedidos Magalu (HTTP):** `allow` em `fetch_page` (`Ingestion::Magalu::Orders`), pelo
   mesmo motivo.
 

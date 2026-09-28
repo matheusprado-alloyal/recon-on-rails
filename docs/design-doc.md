@@ -59,7 +59,7 @@ recon-on-rails/
 │   └── services/
 │       ├── ingestion/
 │       │   ├── alloyal/        # ingestão dos pedidos do App Alloyal
-│       │   └── magalu/         # sessão (Ferrum) e pedidos (watermark, paginação, anti-bot)
+│       │   └── magalu/         # sessão (Selenium remoto) e pedidos (watermark, paginação, anti-bot)
 │       └── reconciliation/
 │           └── magalu/         # candidates, links, remittance, anomalies
 ├── config/database.yml          # banco do Cashback (a origem do App Alloyal fica fora, via pg)
@@ -135,7 +135,7 @@ Schema `public`: o banco é só do Cashback ([ADR-0014](adr/0014-camadas-medalli
 |---|---|---|
 | `id` | `INTEGER` PK | sempre `1`, `CHECK (id = 1)` |
 | `session_id` | `TEXT` | o cookie `sessionid` |
-| `user_agent` | `TEXT` | o `MAGALU_UA` usado no login ([ADR-0007](adr/0007-user-agent-gravado-com-a-sessao.md)) |
+| `user_agent` | `TEXT` | o user-agent do Chrome usado no login ([ADR-0007](adr/0007-user-agent-gravado-com-a-sessao.md)) |
 | `expires_at` | `TIMESTAMPTZ` | o `Expires` do cookie |
 | `captured_at` | `TIMESTAMPTZ` | o momento do login |
 
@@ -164,13 +164,17 @@ scraper → get_credentials → API Magalu
                               └─ 401: renew_credentials → uma nova tentativa
 ```
 
-- Ferrum + Chrome real, **headless**, user-agent forçado pelo `MAGALU_UA`, perfil persistente em
-  `.browser_profile/`, home → `id.magalu.com` com o e-mail na URL, login em laço que reage à
-  tela, uma nova tentativa depois de 30 s ([ADR-0008](adr/0008-navegador-ferrum-chrome-perfil-persistente.md)).
+- Selenium remoto contra o container `selenium/standalone-chrome` (Chrome real, tag fixa), fora da
+  imagem da aplicação; **headless** em produção, com tela em dev (noVNC); perfil persistente no
+  volume do container; direto a `id.magalu.com` com o e-mail na URL, sem aquecer a home; login em
+  laço que reage à tela; uma nova tentativa depois de 30 s, nunca depois de captcha
+  ([ADR-0008](adr/0008-navegador-ferrum-chrome-perfil-persistente.md)).
+- User-agent derivado do próprio Chrome e gravado com a sessão; troca de versão do Chrome gera
+  alerta de atualização da imagem ([ADR-0007](adr/0007-user-agent-gravado-com-a-sessao.md)).
 - Captcha, quando aparece, é resolvido por uma pessoa ([BDR-0007](bdr/0007-sessao-magalu-sem-job.md)).
 - Validade observada da sessão: 48 horas a partir do login (declarada pelo servidor).
 
-Execução: `bin/rails ingestion:magalu_session`.
+Execução: `bin/rails ingestion:magalu_session` (ou `"ingestion:magalu_session[force]"` para renovar).
 
 ### 6.3 Ingestão dos pedidos Magalu
 
@@ -226,7 +230,8 @@ alloyal_raw_orders ┘      refined                 refined              curated
 | M5 — Anomalias | billed false → true gravado sem duplicata e avisado no Slack |
 | M6 — API e front | O analista e o operador fazem tudo pelo front (TypeScript), até baixar a remessa |
 
-Depois: implantação em Docker (Chrome num estágio do Dockerfile, perfil em volume,
+Depois: implantação em Docker (aplicação numa imagem sem navegador; o Chrome é o serviço
+`chrome` do mesmo compose, com o perfil em volume,
 [ADR-0008](adr/0008-navegador-ferrum-chrome-perfil-persistente.md)).
 
 ## 8. O que mudou em relação ao design doc legado ("Bastidor")
@@ -240,13 +245,13 @@ Depois: implantação em Docker (Chrome num estágio do Dockerfile, perfil em vo
 | Fase 1 (match em dois estágios, modo sombra, aprovação via CLI) | **Parcialmente confirmada pela operação:** nota do nome + modelo semântico, janela de 12 h/72 h ([BDR-0010](bdr/0010-candidatos-magalu-janela-nome-modelo.md)). A aprovação é pelo front, não pela CLI ([BDR-0012](bdr/0012-todo-vinculo-e-informado-ao-lojista.md)). Modo sombra não revalidado |
 | `ml_order_id` normalizado removendo não-dígitos antes de cruzar | **Não revalidado.** O `ml_order_id` é gravado como veio, sem normalização — só entra se a conciliação provar que precisa |
 | `billed` muda com o tempo (cancelamentos) | **Confirmado**: `magalu_raw_orders` grava só a mudança de `billed`/`commission` ([ADR-0012](adr/0012-ingestao-magalu-por-watermark.md)) |
-| Navegador disfarçado, perfil persistente, Chrome real, headless, user-agent fixo | **Confirmado** como a receita que passa pelo anti-bot ([ADR-0007](adr/0007-user-agent-gravado-com-a-sessao.md), [ADR-0008](adr/0008-navegador-ferrum-chrome-perfil-persistente.md)) |
+| Navegador disfarçado, perfil persistente, Chrome real, headless, user-agent fixo | **Confirmado** no legado (patchright) como a receita que passa pelo anti-bot; no Backbone, o user-agent vem do Chrome e o navegador é Selenium remoto ([ADR-0007](adr/0007-user-agent-gravado-com-a-sessao.md), [ADR-0008](adr/0008-navegador-ferrum-chrome-perfil-persistente.md)) |
 
 ## 9. Questões em aberto
 
 | Questão | Onde impacta |
 |---|---|
-| A receita de login ([ADR-0008](adr/0008-navegador-ferrum-chrome-perfil-persistente.md)) passa pelo anti-bot com o Ferrum? | `Ingestion::Magalu::Session` |
+| A receita de login ([ADR-0008](adr/0008-navegador-ferrum-chrome-perfil-persistente.md)) passa pelo anti-bot com o Selenium (chromedriver), em headless? | `Ingestion::Magalu::Session` |
 | Qual biblioteca calcula a nota de similaridade do nome, e o limite de 90 vale nela? Calibrar com pares reais | [BDR-0010](bdr/0010-candidatos-magalu-janela-nome-modelo.md) |
 | Qual modelo semântico escolhe entre os 3 candidatos abaixo de 90, e onde ele roda? | [BDR-0010](bdr/0010-candidatos-magalu-janela-nome-modelo.md) |
 | O `created_at` do App Alloyal é mesmo UTC? (a coluna é `timestamp without time zone`: o fuso não vem junto) | [ADR-0004](adr/0004-contrato-da-fonte-na-fronteira.md) |

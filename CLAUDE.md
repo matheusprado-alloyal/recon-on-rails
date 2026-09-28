@@ -16,7 +16,7 @@ Read `CONTEXT.md` (domain glossary) before naming domain concepts, and `docs/des
 - Postgres 17 via `docker compose` (reads `POSTGRES_*` from `.env`).
 - ActiveRecord migrations, schema dumped to `db/structure.sql` (ADR-0002).
 - RSpec (`rspec-rails`), SimpleCov for coverage, RuboCop (`rubocop-rails-omakase`) for lint.
-- Ferrum + real Chrome for the Magalu login (ADR-0008).
+- `selenium-webdriver` against a remote real Chrome (`selenium/standalone-chrome`, pinned tag, its own compose service) for the Magalu login (ADR-0008). The app image has no browser.
 - The front end is TypeScript and calls the Rails controllers over HTTP (ADR-0018).
 
 ## Commands (once the app exists)
@@ -33,7 +33,7 @@ bundle exec rspec spec/services/ingestion/magalu/orders_spec.rb:42   # single te
 bundle exec rubocop                           # lint (incl. cyclomatic complexity)
 
 bin/rails ingestion:alloyal                   # App Alloyal ingestion
-bin/rails ingestion:magalu_session            # capture/renew the Magalu session
+bin/rails ingestion:magalu_session            # ensure a Magalu session ("ingestion:magalu_session[force]" renews)
 bin/rails ingestion:magalu_orders             # Magalu orders ingestion
 ```
 
@@ -97,7 +97,8 @@ These come from Andrej Karpathy's observations on common LLM coding mistakes. Th
 **Magalu session**, `Ingestion::Magalu::Session`:
 - `magalu_session` is a singleton table (`CHECK id = 1`) holding the `sessionid` cookie and the user-agent.
 - `get_credentials` returns the stored session and logs in only when there is none or it has expired. `renew_credentials` forces a login, e.g. after a 401, with one retry only.
-- Login uses Ferrum with the real Chrome, **headless**, the user-agent forced from `MAGALU_UA`, the flags and flow in ADR-0008, and a persistent profile in `.browser_profile/` (a secret, gitignored). Avoid repeated forced logins: they attract captcha.
+- Login uses Selenium in `:remote` mode against the `chrome` compose service (`SELENIUM_URL`), **headless** via the `HEADLESS` constant (set it to `false` in dev and watch through noVNC on `localhost:7900`), the flags and flow in ADR-0008 (straight to the SSO, no home warm-up), and a persistent profile in the `browser_profile` volume inside the browser container (a secret). One retry after 30 s, never after a captcha or a missing credential. Avoid repeated forced logins: they attract captcha.
+- The user-agent comes from the browser itself (a probe session reads `navigator.userAgent`, `HeadlessChrome` becomes `Chrome`), is forced on the login and stored with the session. A Chrome major version change between the stored session and the new login logs an image-update warning (ADR-0007).
 
 **Magalu orders**, `Ingestion::Magalu::Orders`:
 - `fetch_page` calls `rochelle.magazinevoce.com.br/v1/showcase/orders` with the session cookie and the same user-agent. A 401 raises `SessionRejectedError`; a 200 whose body is the captcha page raises `BlockedByAntiBotError` (ADR-0013).
@@ -107,7 +108,7 @@ These come from Andrej Karpathy's observations on common LLM coding mistakes. Th
 
 **Reconciliation**: see BDR-0009 to 0014 and ADR-0014 to 0019. Exclusivity is enforced by partial unique indexes, never by application locks (ADR-0015). Curated tables are append-only and the current state is a view (ADR-0016).
 
-**Env vars:** `POSTGRES_*`, `ALLOYAL_SOURCE_DB_URL`, `MAGALU_EMAIL`, `MAGALU_SENHA`, `MAGALU_UA`. `.env` is loaded by `dotenv-rails` in development and test only.
+**Env vars:** `POSTGRES_*`, `ALLOYAL_SOURCE_DB_URL`, `MAGALU_EMAIL`, `MAGALU_SENHA`, `SELENIUM_URL`. `.env` is loaded by `dotenv-rails` in development and test only.
 
 ## Agent skills
 
