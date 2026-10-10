@@ -3,7 +3,7 @@ source "https://rubygems.org"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.4"
 # Use postgresql as the database for Active Record
-gem "pg", "~> 1.1"
+gem "pg", "~> 1.7"
 # Login Magalu num Chrome remoto (container selenium/standalone-chrome) [ADR-0008]
 gem "selenium-webdriver"
 # Use the Puma web server [https://github.com/puma/puma]
