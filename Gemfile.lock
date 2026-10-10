@@ -160,13 +160,13 @@ GEM
     parser (3.3.12.0)
       ast (~> 2.4.1)
       racc
-    pg (1.6.3)
-    pg (1.6.3-aarch64-linux)
-    pg (1.6.3-aarch64-linux-musl)
-    pg (1.6.3-arm64-darwin)
-    pg (1.6.3-x86_64-darwin)
-    pg (1.6.3-x86_64-linux)
-    pg (1.6.3-x86_64-linux-musl)
+    pg (1.7.0)
+    pg (1.7.0-aarch64-linux)
+    pg (1.7.0-aarch64-linux-musl)
+    pg (1.7.0-arm64-darwin)
+    pg (1.7.0-x86_64-darwin)
+    pg (1.7.0-x86_64-linux)
+    pg (1.7.0-x86_64-linux-musl)
     pp (0.6.4)
       prettyprint
     prettyprint (0.2.0)
@@ -276,7 +276,13 @@ GEM
       regexp_parser (>= 2.0)
       rubocop (~> 1.86, >= 1.86.2)
     ruby-progressbar (1.13.0)
+    rubyzip (3.7.0)
     securerandom (0.4.1)
+    selenium-webdriver (4.51.0)
+      base64 (~> 0.2)
+      logger (~> 1.4)
+      rubyzip (>= 1.2.2, < 4.0)
+      websocket (~> 1.0)
     thor (1.5.0)
     thruster (0.1.26)
     thruster (0.1.26-aarch64-linux)
@@ -292,6 +298,7 @@ GEM
     unicode-emoji (4.3.0)
     uri (1.1.1)
     useragent (0.16.11)
+    websocket (1.2.11)
     websocket-driver (0.8.2)
       base64
       websocket-extensions (>= 0.1.0)
@@ -316,7 +323,7 @@ DEPENDENCIES
   bundler-audit
   debug
   dotenv-rails
-  pg (~> 1.1)
+  pg (~> 1.7)
   puma (>= 5.0)
   rails (~> 8.1.4)
   rspec-rails
@@ -325,6 +332,7 @@ DEPENDENCIES
   rubocop-rails
   rubocop-rails-omakase
   rubocop-rspec
+  selenium-webdriver
   thruster
   tzinfo-data
 
